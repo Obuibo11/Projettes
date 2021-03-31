@@ -1,0 +1,48 @@
+<html>
+<head>
+<title>Canon.kt</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #cc7832;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #6897bb;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+Canon.kt</font>
+</center></td></tr></table>
+<pre><span class="s0">package </span><span class="s1">com.example.projet</span>
+
+<span class="s1">import android.graphics.Paint</span>
+<span class="s1">import android.graphics.Canvas</span>
+<span class="s1">import android.graphics.PointF</span>
+
+<span class="s0">class </span><span class="s1">Canon (</span><span class="s0">var </span><span class="s1">canonBaseRadius: Float</span><span class="s0">, var </span><span class="s1">canonLongueur: Float</span><span class="s0">, </span><span class="s1">hauteur: Float</span><span class="s0">, var </span><span class="s1">largeur: Float</span><span class="s0">, val </span><span class="s1">view: CanonView) {</span>
+    <span class="s0">val </span><span class="s1">canonPaint = Paint()</span>
+    <span class="s0">var </span><span class="s1">finCanon = PointF(view.screenWidth/</span><span class="s2">2</span><span class="s1">+largeur</span><span class="s0">,</span>
+        <span class="s1">view.screenHeight-canonLongueur)</span>
+
+    <span class="s0">fun </span><span class="s1">draw(canvas: Canvas) {</span>
+        <span class="s1">canonPaint.strokeWidth = largeur * </span><span class="s2">1.5f</span>
+        <span class="s1">canvas.drawLine(view.screenWidth/</span><span class="s2">2</span><span class="s0">, </span><span class="s1">view.screenHeight</span><span class="s0">, </span><span class="s1">finCanon.x</span><span class="s0">,</span><span class="s1">finCanon.y</span><span class="s0">, </span><span class="s1">canonPaint)</span>
+        <span class="s1">canvas.drawCircle(view.screenWidth/</span><span class="s2">2</span><span class="s0">, </span><span class="s1">view.screenHeight</span><span class="s0">, </span><span class="s1">canonBaseRadius</span><span class="s0">,</span>
+            <span class="s1">canonPaint)</span>
+    <span class="s1">}</span>
+
+    <span class="s0">fun </span><span class="s1">setFinCanon(hauteur: Float) {</span>
+        <span class="s1">finCanon.set(PointF(view.screenWidth/</span><span class="s2">2</span><span class="s1">+hauteur</span><span class="s0">,</span>
+            <span class="s1">view.screenHeight-canonLongueur))</span>
+    <span class="s1">}</span>
+    <span class="s0">fun </span><span class="s1">align( angles: Double) {</span>
+        <span class="s0">val </span><span class="s1">angle=angles</span>
+        <span class="s1">finCanon.x = (canonLongueur * Math.sin(angle)+view.screenWidth/</span><span class="s2">2</span><span class="s1">).toFloat()</span>
+        <span class="s1">finCanon.y = (-canonLongueur * Math.cos(angle)</span>
+                <span class="s1">+ view.screenHeight ).toFloat()</span>
+    <span class="s1">}</span>
+<span class="s1">}</span>
+</pre>
+</body>
+</html>

@@ -1,0 +1,269 @@
+<html>
+<head>
+<title>CanonView.kt</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #cc7832;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #6897bb;}
+.s3 { color: #6a8759;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+CanonView.kt</font>
+</center></td></tr></table>
+<pre><span class="s0">package </span><span class="s1">com.example.projet</span>
+
+<span class="s1">import android.app.AlertDialog</span>
+<span class="s1">import android.app.Dialog</span>
+<span class="s1">import android.content.Context</span>
+<span class="s1">import android.content.DialogInterface</span>
+<span class="s1">import android.graphics.Canvas</span>
+<span class="s1">import android.graphics.Color</span>
+<span class="s1">import android.graphics.Paint</span>
+<span class="s1">import android.graphics.Point</span>
+<span class="s1">import android.media.AudioAttributes</span>
+<span class="s1">import android.media.SoundPool</span>
+<span class="s1">import android.os.Build</span>
+<span class="s1">import android.os.Bundle</span>
+<span class="s1">import android.util.AttributeSet</span>
+<span class="s1">import android.util.SparseIntArray</span>
+<span class="s1">import android.view.MotionEvent</span>
+<span class="s1">import android.view.SurfaceHolder</span>
+<span class="s1">import android.view.SurfaceView</span>
+<span class="s1">import androidx.annotation.RequiresApi</span>
+<span class="s1">import androidx.fragment.app.DialogFragment</span>
+<span class="s1">import androidx.fragment.app.FragmentActivity</span>
+<span class="s1">import com.example.projet.R</span>
+
+<span class="s1">@RequiresApi(Build.VERSION_CODES.LOLLIPOP)</span>
+<span class="s0">class </span><span class="s1">CanonView @JvmOverloads constructor (context: Context</span><span class="s0">, </span><span class="s1">attributes: AttributeSet? = </span><span class="s0">null, </span><span class="s1">defStyleAttr: Int = </span><span class="s2">0</span><span class="s1">): SurfaceView(context</span><span class="s0">, </span><span class="s1">attributes</span><span class="s0">,</span><span class="s1">defStyleAttr)</span><span class="s0">, </span><span class="s1">SurfaceHolder.Callback</span><span class="s0">, </span><span class="s1">Runnable {</span>
+    <span class="s1">lateinit </span><span class="s0">var </span><span class="s1">canvas: Canvas</span>
+    <span class="s0">val </span><span class="s1">backgroundPaint = Paint()</span>
+    <span class="s0">val </span><span class="s1">textPaint = Paint()</span>
+    <span class="s0">var </span><span class="s1">screenWidth = </span><span class="s2">0f</span>
+    <span class="s0">var </span><span class="s1">screenHeight = </span><span class="s2">0f</span>
+    <span class="s0">var </span><span class="s1">drawing = </span><span class="s0">false</span>
+    <span class="s0">var </span><span class="s1">gameOver = </span><span class="s0">false</span>
+    <span class="s0">var </span><span class="s1">totalElapsedTime = </span><span class="s2">0.0</span>
+    <span class="s1">lateinit </span><span class="s0">var </span><span class="s1">thread: Thread</span>
+    <span class="s0">val </span><span class="s1">canon = Canon(</span><span class="s2">0f</span><span class="s0">, </span><span class="s2">0f</span><span class="s0">, </span><span class="s2">0f</span><span class="s0">, </span><span class="s2">0f</span><span class="s0">, this</span><span class="s1">)</span>
+    <span class="s0">var </span><span class="s1">lesBalles= ArrayList&lt;BalleCanon&gt;()</span>
+    <span class="s0">var </span><span class="s1">shotsFired = </span><span class="s2">0</span>
+    <span class="s0">var </span><span class="s1">timeLeft = </span><span class="s2">0.0</span>
+    <span class="s0">val </span><span class="s1">MISS_PENALTY = </span><span class="s2">2</span>
+    <span class="s0">val </span><span class="s1">HIT_REWARD = </span><span class="s2">3</span>
+    <span class="s0">val </span><span class="s1">activity = context </span><span class="s0">as </span><span class="s1">FragmentActivity</span>
+    <span class="s0">val </span><span class="s1">soundPool: SoundPool</span>
+    <span class="s0">val </span><span class="s1">soundMap: SparseIntArray</span>
+    <span class="s0">var </span><span class="s1">canonballRadius= </span><span class="s2">20f</span>
+    <span class="s0">var </span><span class="s1">canonballVitesse = </span><span class="s2">1000f</span>
+    <span class="s0">var </span><span class="s1">cadence = </span><span class="s2">100f</span>
+    <span class="s0">var </span><span class="s1">previousT=</span><span class="s2">0</span>
+
+    <span class="s1">init {</span>
+        <span class="s1">backgroundPaint.color = Color.WHITE</span>
+        <span class="s1">textPaint.textSize= screenWidth/</span><span class="s2">20</span>
+        <span class="s1">textPaint.color = Color.BLACK</span>
+        <span class="s1">timeLeft = </span><span class="s2">10.0</span>
+
+        <span class="s0">val </span><span class="s1">audioAttributes = AudioAttributes.Builder()</span>
+            <span class="s1">.setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)</span>
+            <span class="s1">.setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)</span>
+            <span class="s1">.build()</span>
+
+        <span class="s1">soundPool = SoundPool.Builder()</span>
+            <span class="s1">.setMaxStreams(</span><span class="s2">1</span><span class="s1">)</span>
+            <span class="s1">.setAudioAttributes(audioAttributes)</span>
+            <span class="s1">.build()</span>
+
+        <span class="s1">soundMap = SparseIntArray(</span><span class="s2">3</span><span class="s1">)</span>
+
+    <span class="s1">}</span>
+
+    <span class="s0">fun </span><span class="s1">pause() {</span>
+        <span class="s1">drawing = </span><span class="s0">false</span>
+        <span class="s1">thread.join()</span>
+    <span class="s1">}</span>
+
+    <span class="s0">fun </span><span class="s1">resume() {</span>
+        <span class="s1">drawing = </span><span class="s0">true</span>
+        <span class="s1">thread = Thread(</span><span class="s0">this</span><span class="s1">)</span>
+        <span class="s1">thread.start()</span>
+    <span class="s1">}</span>
+
+    <span class="s1">override </span><span class="s0">fun </span><span class="s1">run() {</span>
+        <span class="s0">val </span><span class="s1">currentTime = System.currentTimeMillis()</span>
+        <span class="s0">var </span><span class="s1">previousFrameTime = System.currentTimeMillis()</span>
+        <span class="s0">val </span><span class="s1">elapsedTimeMS:Double=(currentTime-previousFrameTime).toDouble()</span>
+        <span class="s1">totalElapsedTime += elapsedTimeMS / </span><span class="s2">1000.0</span>
+        <span class="s0">while </span><span class="s1">(drawing) {</span>
+            <span class="s0">val </span><span class="s1">currentTime = System.currentTimeMillis()</span>
+            <span class="s0">val </span><span class="s1">elapsedTimeMS = (currentTime-previousFrameTime).toDouble()</span>
+            <span class="s1">updatePositions(elapsedTimeMS)</span>
+            <span class="s1">draw()</span>
+            <span class="s1">previousFrameTime = currentTime</span>
+        <span class="s1">}</span>
+    <span class="s1">}</span>
+
+    <span class="s1">override </span><span class="s0">fun </span><span class="s1">onSizeChanged(w:Int</span><span class="s0">, </span><span class="s1">h:Int</span><span class="s0">, </span><span class="s1">oldw:Int</span><span class="s0">, </span><span class="s1">oldh:Int) {</span>
+        <span class="s0">super</span><span class="s1">.onSizeChanged(w</span><span class="s0">, </span><span class="s1">h</span><span class="s0">, </span><span class="s1">oldw</span><span class="s0">, </span><span class="s1">oldh)</span>
+        <span class="s1">screenWidth = w.toFloat()</span>
+        <span class="s1">screenHeight = h.toFloat()</span>
+
+        <span class="s1">canon.canonBaseRadius = (h / </span><span class="s2">18f</span><span class="s1">)</span>
+        <span class="s1">canon.canonLongueur = (w / </span><span class="s2">8f</span><span class="s1">)</span>
+        <span class="s1">canon.largeur = (w / </span><span class="s2">24f</span><span class="s1">)</span>
+        <span class="s1">canon.setFinCanon(h / </span><span class="s2">2f</span><span class="s1">)</span>
+
+<span class="s3">&quot;&quot;&quot;        balle.canonballRadius= (w / 36f)</span>
+        <span class="s3">balle.canonballVitesse = (w * 3 / 2f)</span>
+<span class="s3">&quot;&quot;&quot;</span>
+        <span class="s1">textPaint.setTextSize(w / </span><span class="s2">20f</span><span class="s1">)</span>
+        <span class="s1">textPaint.isAntiAlias = </span><span class="s0">true</span>
+
+        <span class="s1">newGame()</span>
+    <span class="s1">}</span>
+    <span class="s0">fun </span><span class="s1">draw() {</span>
+        <span class="s0">if </span><span class="s1">(holder.surface.isValid) {</span>
+            <span class="s1">canvas = holder.lockCanvas()</span>
+            <span class="s1">canvas.drawRect(</span><span class="s2">0f</span><span class="s0">, </span><span class="s2">0f</span><span class="s0">, </span><span class="s1">canvas.width.toFloat()</span><span class="s0">,</span>
+                <span class="s1">canvas.height.toFloat()</span><span class="s0">, </span><span class="s1">backgroundPaint)</span>
+            <span class="s0">val </span><span class="s1">formatted = String.format(</span><span class="s3">&quot;%.2f&quot;</span><span class="s0">, </span><span class="s1">timeLeft)</span>
+            <span class="s1">canvas.drawText(</span><span class="s3">&quot;Il reste </span><span class="s0">$</span><span class="s1">formatted </span><span class="s3">secondes. &quot;</span><span class="s0">,</span>
+                <span class="s2">30f</span><span class="s0">, </span><span class="s2">50f</span><span class="s0">, </span><span class="s1">textPaint)</span>
+
+            <span class="s1">canon.draw(canvas)</span>
+            <span class="s0">for </span><span class="s1">(balle </span><span class="s0">in </span><span class="s1">lesBalles){</span>
+                <span class="s0">if </span><span class="s1">(balle.canonballOnScreen)</span>
+                    <span class="s1">balle.draw(canvas)</span>
+            <span class="s1">}</span>
+
+            <span class="s1">holder.unlockCanvasAndPost(canvas)</span>
+        <span class="s1">}</span>
+    <span class="s1">}</span>
+
+    <span class="s1">override </span><span class="s0">fun </span><span class="s1">surfaceChanged(holder: SurfaceHolder</span><span class="s0">, </span><span class="s1">format: Int</span><span class="s0">,</span>
+                                <span class="s1">width: Int</span><span class="s0">, </span><span class="s1">height: Int) {}</span>
+
+    <span class="s1">override </span><span class="s0">fun </span><span class="s1">surfaceCreated(holder: SurfaceHolder) {}</span>
+
+    <span class="s1">override </span><span class="s0">fun </span><span class="s1">surfaceDestroyed(holder: SurfaceHolder) {}</span>
+    <span class="s0">fun </span><span class="s1">updatePositions(elapsedTimeMS: Double) {</span>
+        <span class="s0">val </span><span class="s1">interval = elapsedTimeMS / </span><span class="s2">1000.0</span>
+        <span class="s0">for </span><span class="s1">(balle </span><span class="s0">in </span><span class="s1">lesBalles){</span>
+
+            <span class="s0">if </span><span class="s1">(balle.canonballOnScreen){</span>
+                <span class="s1">balle.update(interval)</span>
+
+            <span class="s1">}</span>
+        <span class="s1">}</span>
+        <span class="s1">timeLeft -= interval</span>
+
+        <span class="s0">if </span><span class="s1">(timeLeft &lt;= </span><span class="s2">0.0</span><span class="s1">) {</span>
+            <span class="s1">timeLeft = </span><span class="s2">0.0</span>
+            <span class="s1">gameOver = </span><span class="s0">true</span>
+            <span class="s1">drawing = </span><span class="s0">false</span>
+            <span class="s1">showGameOverDialog(R.string.lose)</span>
+        <span class="s1">}</span>
+    <span class="s1">}</span>
+    <span class="s1">override </span><span class="s0">fun </span><span class="s1">onTouchEvent(e: MotionEvent): Boolean {</span>
+        <span class="s0">val </span><span class="s1">action = e.action</span>
+        <span class="s0">if </span><span class="s1">(action == MotionEvent.ACTION_DOWN</span>
+            <span class="s1">|| action == MotionEvent.ACTION_MOVE) {</span>
+            <span class="s0">if </span><span class="s1">(-previousT+System.currentTimeMillis().toInt()&gt;cadence){</span>
+              <span class="s1">fireCanonball(e)</span>
+                <span class="s1">previousT=System.currentTimeMillis().toInt()</span>
+        <span class="s1">}}</span>
+        <span class="s0">return true</span>
+    <span class="s1">}</span>
+
+    <span class="s0">fun </span><span class="s1">fireCanonball(event: MotionEvent) {</span>
+        <span class="s0">val </span><span class="s1">angle = alignCanon(event)</span>
+        <span class="s1">++shotsFired</span>
+        <span class="s1">lesBalles.add(BalleCanon(</span><span class="s0">this, </span><span class="s1">canonballRadius</span><span class="s0">,</span><span class="s1">canonballVitesse</span><span class="s0">,</span><span class="s1">angle))</span>
+
+    <span class="s1">}</span>
+
+    <span class="s0">fun </span><span class="s1">alignCanon(event: MotionEvent): Double {</span>
+        <span class="s0">val </span><span class="s1">touchPoint = Point(event.x.toInt()</span><span class="s0">, </span><span class="s1">event.y.toInt())</span>
+        <span class="s0">val </span><span class="s1">centerMinusY = screenHeight  - touchPoint.y</span>
+        <span class="s0">val </span><span class="s1">centerMinusX= -screenWidth/</span><span class="s2">2 </span><span class="s1">+ touchPoint.x</span>
+        <span class="s0">var </span><span class="s1">angle = </span><span class="s2">0.0</span>
+        <span class="s0">if </span><span class="s1">(centerMinusY != </span><span class="s2">0.0f</span><span class="s1">)</span>
+            <span class="s1">angle = Math.atan((centerMinusX).toDouble()/ centerMinusY)</span>
+        <span class="s3">&quot;&quot;&quot;        if (touchPoint.y &gt; screenHeight / 2)</span>
+            <span class="s3">angle += Math.PI&quot;&quot;&quot;</span>
+        <span class="s1">canon.align(angle)</span>
+        <span class="s0">return </span><span class="s1">angle</span>
+    <span class="s1">}</span>
+    <span class="s0">fun </span><span class="s1">reduceTimeLeft() {</span>
+        <span class="s1">timeLeft -= MISS_PENALTY</span>
+    <span class="s1">}</span>
+    <span class="s0">fun </span><span class="s1">increaseTimeLeft() {</span>
+        <span class="s1">timeLeft += HIT_REWARD</span>
+    <span class="s1">}</span>
+    <span class="s0">fun </span><span class="s1">gameOver() {</span>
+        <span class="s1">drawing = </span><span class="s0">false</span>
+        <span class="s1">showGameOverDialog(R.string.win)</span>
+        <span class="s1">gameOver = </span><span class="s0">true</span>
+    <span class="s1">}</span>
+    <span class="s0">fun </span><span class="s1">showGameOverDialog(messageId: Int) {</span>
+        <span class="s0">class </span><span class="s1">GameResult: DialogFragment() {</span>
+            <span class="s1">override </span><span class="s0">fun </span><span class="s1">onCreateDialog(bundle: Bundle?): Dialog {</span>
+                <span class="s0">val </span><span class="s1">builder = AlertDialog.Builder(getActivity())</span>
+                <span class="s1">builder.setTitle(resources.getString(messageId))</span>
+                <span class="s1">builder.setMessage(</span>
+                    <span class="s1">resources.getString(</span>
+                        <span class="s1">R.string.results_format</span><span class="s0">, </span><span class="s1">shotsFired</span><span class="s0">, </span><span class="s1">totalElapsedTime</span>
+                    <span class="s1">)</span>
+                <span class="s1">)</span>
+                <span class="s1">builder.setPositiveButton(R.string.reset_game</span><span class="s0">,</span>
+                    <span class="s1">DialogInterface.OnClickListener { _</span><span class="s0">, </span><span class="s1">_-&gt;newGame()}</span>
+                <span class="s1">)</span>
+                <span class="s0">return </span><span class="s1">builder.create()</span>
+            <span class="s1">}</span>
+        <span class="s1">}</span>
+
+        <span class="s1">activity.runOnUiThread(</span>
+            <span class="s1">Runnable {</span>
+                <span class="s0">val </span><span class="s1">ft = activity.supportFragmentManager.beginTransaction()</span>
+                <span class="s0">val </span><span class="s1">prev =</span>
+                    <span class="s1">activity.supportFragmentManager.findFragmentByTag(</span><span class="s3">&quot;dialog&quot;</span><span class="s1">)</span>
+                <span class="s0">if </span><span class="s1">(prev != </span><span class="s0">null</span><span class="s1">) {</span>
+                    <span class="s1">ft.remove(prev)</span>
+                <span class="s1">}</span>
+                <span class="s1">ft.addToBackStack(</span><span class="s0">null</span><span class="s1">)</span>
+                <span class="s0">val </span><span class="s1">gameResult = GameResult()</span>
+                <span class="s1">gameResult.setCancelable(</span><span class="s0">false</span><span class="s1">)</span>
+                <span class="s1">gameResult.show(ft</span><span class="s0">,</span><span class="s3">&quot;dialog&quot;</span><span class="s1">)</span>
+            <span class="s1">}</span>
+        <span class="s1">)</span>
+    <span class="s1">}</span>
+    <span class="s0">fun </span><span class="s1">newGame() {</span>
+        <span class="s1">timeLeft = </span><span class="s2">10.0</span>
+        <span class="s0">for </span><span class="s1">(balle </span><span class="s0">in </span><span class="s1">lesBalles){</span>
+        <span class="s1">balle.resetCanonBall()}</span>
+        <span class="s1">shotsFired = </span><span class="s2">0</span>
+        <span class="s1">totalElapsedTime = </span><span class="s2">0.0</span>
+        <span class="s1">drawing = </span><span class="s0">true</span>
+        <span class="s0">if </span><span class="s1">(gameOver) {</span>
+            <span class="s1">gameOver = </span><span class="s0">false</span>
+            <span class="s1">thread = Thread(</span><span class="s0">this</span><span class="s1">)</span>
+            <span class="s1">thread.start()</span>
+        <span class="s1">}</span>
+    <span class="s1">}</span>
+    <span class="s0">fun </span><span class="s1">playObstacleSound() {</span>
+        <span class="s1">soundPool.play(soundMap.get(</span><span class="s2">2</span><span class="s1">)</span><span class="s0">, </span><span class="s2">1f</span><span class="s0">, </span><span class="s2">1f</span><span class="s0">, </span><span class="s2">1</span><span class="s0">, </span><span class="s2">0</span><span class="s0">, </span><span class="s2">1f</span><span class="s1">)</span>
+    <span class="s1">}</span>
+
+    <span class="s0">fun </span><span class="s1">playCibleSound() {</span>
+        <span class="s1">soundPool.play(soundMap.get(</span><span class="s2">0</span><span class="s1">)</span><span class="s0">, </span><span class="s2">1f</span><span class="s0">, </span><span class="s2">1f</span><span class="s0">, </span><span class="s2">1</span><span class="s0">, </span><span class="s2">0</span><span class="s0">, </span><span class="s2">1f</span><span class="s1">)</span>
+    <span class="s1">}</span>
+<span class="s1">}</span>
+</pre>
+</body>
+</html>

@@ -1,0 +1,100 @@
+<html>
+<head>
+<title>BalleCanon.kt</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #cc7832;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #6897bb;}
+.s3 { color: #808080;}
+.s4 { color: #6a8759;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+BalleCanon.kt</font>
+</center></td></tr></table>
+<pre><span class="s0">package </span><span class="s1">com.example.projet</span>
+
+<span class="s1">import android.graphics.Canvas</span>
+<span class="s1">import android.graphics.Color</span>
+<span class="s1">import android.graphics.Paint</span>
+<span class="s1">import android.graphics.PointF</span>
+<span class="s1">import android.os.Build</span>
+<span class="s1">import androidx.annotation.RequiresApi</span>
+
+<span class="s0">class </span><span class="s1">BalleCanon (</span><span class="s0">var </span><span class="s1">view: CanonView</span><span class="s0">, var </span><span class="s1">canonballRadius : Float</span><span class="s0">, var </span><span class="s1">canonballVitesse: Float</span><span class="s0">, val </span><span class="s1">angle:Double ) {</span>
+    <span class="s0">var </span><span class="s1">canonball = PointF()</span>
+    <span class="s0">var </span><span class="s1">canonballVitesseX = </span><span class="s2">0f</span>
+    <span class="s0">var </span><span class="s1">canonballVitesseY = </span><span class="s2">0f</span>
+    <span class="s0">var </span><span class="s1">canonballOnScreen = </span><span class="s0">true</span>
+    <span class="s0">var </span><span class="s1">canonballPaint = Paint()</span>
+
+
+    <span class="s1">init {</span>
+        <span class="s1">canonballPaint.color = Color.RED</span>
+        <span class="s0">this</span><span class="s1">.launch(angle)</span>
+    <span class="s1">}</span>
+
+    <span class="s0">fun </span><span class="s1">launch(angles: Double) {</span>
+        <span class="s0">val </span><span class="s1">angle=angles- Math.PI/</span><span class="s2">2</span>
+        <span class="s1">canonball.x = view.screenWidth/</span><span class="s2">2f</span>
+        <span class="s1">canonball.y = view.screenHeight -</span><span class="s2">2</span><span class="s1">*canonballRadius</span>
+        <span class="s1">canonballVitesseX=(canonballVitesse*Math.cos(angle)).toFloat()</span>
+        <span class="s1">canonballVitesseY=(canonballVitesse*Math.sin(angle)).toFloat()</span>
+        <span class="s1">canonballOnScreen = </span><span class="s0">true</span>
+
+    <span class="s1">}</span>
+
+
+    <span class="s1">@RequiresApi(Build.VERSION_CODES.LOLLIPOP)</span>
+    <span class="s0">fun </span><span class="s1">update(interval: Double) {</span>
+        <span class="s0">if </span><span class="s1">(canonballOnScreen) {</span>
+            <span class="s1">canonball.x += (interval * canonballVitesseX).toFloat()</span>
+            <span class="s1">canonball.y += (interval * canonballVitesseY).toFloat()</span>
+
+            <span class="s3">/* Vérifions si la balle touche l'obstacle ou pas */</span>
+<span class="s4">&quot;&quot;&quot;            if (canonball.x + canonballRadius &gt; obstacle.obstacle.left &amp;&amp;</span>
+                <span class="s4">canonball.y + canonballRadius &gt; obstacle.obstacle.top &amp;&amp;</span>
+                <span class="s4">canonball.y - canonballRadius &lt; obstacle.obstacle.bottom) {</span>
+                <span class="s4">canonballVitesseX *= -1</span>
+                <span class="s4">canonball.offset((5*canonballVitesseX*interval).toFloat(), 0f)</span>
+                <span class="s4">view.reduceTimeLeft()</span>
+                <span class="s4">view.playObstacleSound()</span>
+            <span class="s4">}</span>
+<span class="s4">&quot;&quot;&quot;</span>
+            <span class="s3">// Si elle sorte de l'écran</span>
+            <span class="s0">if </span><span class="s1">(canonball.x + canonballRadius &gt; view.screenWidth</span>
+                <span class="s1">|| canonball.x - canonballRadius &lt; </span><span class="s2">0</span><span class="s1">) {</span>
+                <span class="s1">canonballOnScreen = </span><span class="s0">false</span>
+            <span class="s1">}</span>
+            <span class="s0">else if </span><span class="s1">(canonball.y + canonballRadius &gt; view.screenHeight</span>
+                <span class="s1">|| canonball.y - canonballRadius &lt; </span><span class="s2">0</span><span class="s1">) {</span>
+                <span class="s1">canonballOnScreen = </span><span class="s0">false</span>
+            <span class="s1">}</span>
+<span class="s4">&quot;&quot;&quot;            else if (canonball.x+canonballRadius&gt;cible.cible.left</span>
+                <span class="s4">&amp;&amp; canonball.y+canonballRadius&gt;cible.cible.top</span>
+                <span class="s4">&amp;&amp; canonball.y-canonballRadius&lt;cible.cible.bottom) {</span>
+                <span class="s4">if (canonball.x + canonballRadius &gt; cible.cible.left</span>
+                    <span class="s4">&amp;&amp; canonball.y + canonballRadius &gt; cible.cible.top</span>
+                    <span class="s4">&amp;&amp; canonball.y - canonballRadius &lt; cible.cible.bottom) {</span>
+                    <span class="s4">cible.detectChoc(this)</span>
+                <span class="s4">}</span>
+
+            <span class="s4">}</span>
+<span class="s4">&quot;&quot;&quot;</span>
+        <span class="s1">}</span>
+    <span class="s1">}</span>
+
+    <span class="s0">fun </span><span class="s1">draw(canvas: Canvas) {</span>
+        <span class="s1">canvas.drawCircle(canonball.x</span><span class="s0">, </span><span class="s1">canonball.y</span><span class="s0">, </span><span class="s1">canonballRadius</span><span class="s0">,</span>
+            <span class="s1">canonballPaint)</span>
+    <span class="s1">}</span>
+    <span class="s0">fun </span><span class="s1">resetCanonBall() {</span>
+        <span class="s1">canonballOnScreen = </span><span class="s0">true</span>
+    <span class="s1">}</span>
+<span class="s1">}</span></pre>
+</body>
+</html>
